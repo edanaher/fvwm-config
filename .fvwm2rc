@@ -1,0 +1,516 @@
+## Helpful general funcs
+DestroyFunc CreateFunc
+AddToFunc CreateFunc
++ I DestroyFunc $*
++ I AddToFunc $*
+
+CreateFunc On
++ I PipeRead 'if [ `hostname` = $0 ]; then echo "$1"; fi'
+
+## General 
+ModulePath +:/usr/lib/fvwm/2.5.26/
+
+DesktopSize 4x4
+Style * SnapAttraction 8 Windows Screen
+IgnoreModifiers L
+OpaqueMoveSize unlimited
+Style * ResizeOpaque
+Style * TileCascadePlacement
+Style * SloppyFocus, ClickToFocusRaises, !ClickToFocusPassesClick, FPGrabFocus
+
+EdgeScroll 100 100
+EdgeThickness 2
+
+CreateFunc StartFunction
++ I exec hsetroot -tile ~/.fvwm/bg.ppm
++ I exec exec ~/.fvwm/lateinit
+# + I exec xsetroot -mod 2 2 -bg rgb:4/6/8 -fg rgb:3/48/6
+# PipeRead 'exec bash -c "if [ $$(($[desk.width]/$[desk.pagesx])) == 2944 ]; then echo +I exec ~/.fvwm/osdhandler 1920 1200; else echo +I exec ~/.fvwm/osdhandler $$(($[desk.width]/$[desk.pagesx])) $$(($[desk.height]/$[desk.pagesy])); fi"'
+
+ + I exec cd ~/.fvwm; if [ $DISPLAY == 0.0 ] ; then osdhandler 1920; fi
+ + I module FvwmCommandS
+ + I exec exec xset dpms $((15*60)) $((60*60)) $((60*60*2))
+#+ I exec ~/.fvwm/osd_volume
+# + I exec 'xmodmap ~/.Xmodmap'
+
+## Prettify
+Style * BorderWidth 1, HandleWidth 1
+Style Transient HandleWidth 10
+
+CleanupColorsets
+Colorset 1 VGradient 20 rgb:70/70/70 rgb:3/3/3 # Inactive
+Colorset 2 Vgradient 20 rgb:6/9/C rgb:33/48/66 # Active
+Colorset 3 Vgradient 20 rgb:9/C/E rgb:6/9/B # Urgent
+Colorset 4 Vgradient 20 rgb:6/9/D rgb:4/7/B, fg rgb:F/F/F    # Alt-tab menu
+
+
+Style * Font 'xft:vera sans-8'
+On gemedet `Style * Font \\'xft:vera sans-8\\'`
+Style * ForeColor rgb:b/b/b, HilightFore White
+TitleStyle InActive Colorset 1
+TitleStyle Active Colorset 2
+BorderStyle InActive Colorset 1
+BorderStyle Active Colorset 2
+
+TitleStyle -- flat
+BorderStyle -- flat
+
+## Setup buttons
+ButtonStyle All Default -- UseTitleStyle flat
+AddButtonStyle 1 5 40x40@4 40x50@1 50x50@1 50x40@1 40x40@1
+AddButtonStyle 6 2 35x65@4 65x65@1
+AddButtonStyle 4 12 25x75@4 65x75@1 65x40@1 25x40@1 25x75@1 \
+                    25x45@4 65x45@1 \
+                    45x40@4 45x20@1 85x20@1 85x60@1 65x60@1
+AddButtonStyle 2 4 25x20@4 75x70@1 25x70@4 75x20@1
+
+DestroyFunc ClearMouse
+DestroyFunc ResetMouse
+CreateFunc PlainMouse
++ I Mouse $*
++ I AddToFunc ClearMouse
++ I + I Mouse $0 $1 $2 -
++ I AddToFunc ResetMouse
++ I + I Mouse $*
+
+PlainMouse 1 1 A Stick
+PlainMouse 1 6 A WindowShade
+PlainMouse 1 4 A Maximize
+PlainMouse 1 2 A Close
+
+## Mouse bindings
+
+#MapMouse Button Context Modifiers I C D M H
+CreateFunc MapMouse
++ I PlainMouse $0 $1 $2 EvanMouse$0$1$2
++ I CreateFunc EvanMouse$0$1$2
++ I + I $3
++ I + C $4
++ I + D $5
++ I + M $6
++ I + H $7
+
+MapMouse 1 T A Raise '' WindowShade Move   Move
+MapMouse 1 W M Raise '' Lower       Move   Move
+MapMouse 3 W M 'Resize Direction SE' '' ''         '' ''
+
+## Keyboard Bindings
+
+DestroyFunc LeaveViModeClear
+DestroyFunc LeaveViModeBind
+DestroyFunc EnterViModeClear
+DestroyFunc EnterViModeBind
+
+AddToFunc EnterViModeBind
++ I Key Period A N RepeatLastCommand
++ I ViHandleHJKL CR "Move w-[COUNT]p w+0p Warp" "Move w+0p w+[COUNT]p Warp" \
+                    "Move w+0p w-[COUNT]p Warp" "Move w+[COUNT]p w+0p Warp" -
+
+AddToFunc LeaveViModeClear
++ I Key Period A N -
++ I Key h A N -
++ I Key j A N -
++ I Key k A N -
++ I Key l A N -
++ I Key Space A N -
+
+CreateFunc LeaveViMode
++ I LeaveViModeClear
++ I LeaveViModeBind
+
+CreateFunc EnterViMode
++ I EnterViModeClear
++ I EnterViModeBind
+
+CreateFunc DoViFuncN
++ I $*
+
+CreateFunc DoViFuncR
++ I $*
++ I SetEnv FVWMLASTCOMMAND '$*'
+
+CreateFunc DoViFuncCR
++ I PipeRead "echo SetEnv FVWMVICOUNT `echo $[FVWMVICOUNT] | sed 's/1\\(..*\\)/\\1/'`"
++ I PipeRead "echo $* | sed 's/\\[COUNT\\]/$[FVWMVICOUNT]/g'"
++ I SetEnv FVWMLASTCOUNT $[FVWMVICOUNT]
++ I SetEnv FVWMLASTCOMMAND "'$*'"
++ I SetEnv FVWMVICOUNT 1
+
+CreateFunc DoViFuncC
++ I PipeRead "echo SetEnv FVWMVICOUNT `echo $[FVWMVICOUNT] | sed 's/1\\(..*\\)/\\1/'`"
++ I PipeRead "echo $* | sed 's/\\[COUNT\\]/$[FVWMVICOUNT]/g'"
++ I SetEnv FVWMVICOUNT 1
+
+CreateFunc PlainKey
++ I Key $*
++ I AddToFunc EnterViModeClear
++ I + I Key $0 $1 $2 -
++ I AddToFunc LeaveViModeBind
++ I + I Key $*
+
+CreateFunc ViKey
++ I AddToFunc EnterViModeBind
++ I + I Key $0 $1 $2 DoViFunc$3 $4 $5 $6 $7 $8 $9
++ I AddToFunc LeaveViModeClear
++ I + I Key $0 $1 $2 -
+
+CreateFunc RepeatLastCommand
++ I PipeRead "echo SetEnv FVWMVICOUNT `echo $[FVWMVICOUNT] | sed 's/1\\(..*\\)/\\1/'`"
++ I PipeRead "echo SetEnv FVWMVICOUNT `awk 'BEGIN {print $[FVWMVICOUNT] * $[FVWMLASTCOUNT]}'`"
++ I PipeRead "echo $[FVWMLASTCOMMAND] | sed 's/\\[COUNT\\]/$[FVWMVICOUNT]/g'"
++ I SetEnv FVWMVICOUNT 1
+
+CreateFunc ViHandleHJKL
++ I Key h A N DoViFunc$0 '$1'
++ I Key j A N DoViFunc$0 '$2'
++ I Key k A N DoViFunc$0 '$3'
++ I Key l A N DoViFunc$0 '$4'
++ I Key Space A N $5
+
+ViKey m A N N \
+   ViHandleHJKL CR '"Move w-[COUNT]p w+0p Warp"' '"Move w+0p w+[COUNT]p Warp"' \
+                   '"Move w+0p w-[COUNT]p Warp"' '"Move w+[COUNT]p w+0p Warp"' -
+ViKey M A S N \
+   ViHandleHJKL CR '"CursorMove -[COUNT]p +0p"' \
+                   '"CursorMove +0p +[COUNT]p"' \
+                   '"CursorMove +0p -[COUNT]p"' \
+                   '"CursorMove +[COUNT]p +0p"' \
+                   Maximize
+ViKey r A N N \
+   ViHandleHJKL CR '"Resize br w-[COUNT]p w+0p"' '"Resize br w+0p w+[COUNT]p "'\
+                   '"Resize br w+0p w-[COUNT]p"' '"Resize br w+[COUNT]p w+0p "' -
+ViKey d A N N \
+   ViHandleHJKL CR '"Scroll -[COUNT]p 0"' '"Scroll 0 [COUNT]p"'\
+                   '"Scroll 0 -[COUNT]p"' '"Scroll [COUNT]p 0"' -
+ViKey d A S N \
+   ViHandleHJKL CR '"Scroll -[COUNT]00 0"' '"Scroll 0 [COUNT]00"'\
+                   '"Scroll 0 -[COUNT]00"' '"Scroll [COUNT]00 0"' -
+
+ViKey l A S N \
+   ViHandleHJKL CR '"Lower"' '"Layer -[COUNT]"'\
+                   '"Layer +[COUNT]"' '"Raise"' -
+
+ViKey f A N N \
+   ViHandleHJKL CR '"Direction W (AcceptsFocus) WarpToWindow 50 50"' '"Direction S (AcceptsFocus) WarpToWindow 50 50"'\
+                   '"Direction N (AcceptsFocus) WarpToWindow 50 50"' '"Direction E (AcceptsFocus) WarpToWindow 50 50"' -
+
+#Exec Mode
+
+DestroyFunc EnterExecModeBind
+DestroyFunc LeaveExecModeClear
+
+CreateFunc EnterExecMode
++ I EnterViModeClear
++ I EnterExecModeBind
+
+CreateFunc LeaveExecMode
++ I LeaveExecModeClear
++ I LeaveViModeBind
+
+CreateFunc ExecKey
++ I AddToFunc EnterExecModeBind
++ I + I Key $0 $1 $2 $3 $4 $5 $6 $7 $8 $9
++ I AddToFunc LeaveExecModeClear
++ I + I Key $0 $1 $2 -
+
+CreateFunc ExecKey
++ I AddToFunc EnterExecModeBind
++ I + I Key $0 $1 $2 $3 $4 $5 $6 $7 $8 $9
++ I AddToFunc LeaveExecModeClear
++ I + I Key $0 $1 $2 -
+
+CreateFunc EchoExecOsd
++ I Exec echo x:$0 > ~/.fvwm/osd_pipe
+
+CreateFunc EchoPulseOsd
++ I Exec echo p > ~/.fvwm/osd_pipe
+
+PlainKey F1 A M4 Exec sudo /usr/sbin/hibernate-ram
+PlainKey Colon A CS EchoExecOsd start
+PlainKey Colon A MS EchoExecOsd calc
+PlainKey Colon A 4S EchoExecOsd jconsole
+PlainKey Semicolon A CM EchoExecOsd music
+PlainKey Apostrophe A CM EchoExecOsd playlist
+PlainKey Semicolon A C4 EchoExecOsd .show_osd
+PlainKey P A CM EchoPulseOsd 
+
+#Make quit *really* hard to do accidentally
+ViKey q A CSM4 Quit
+ViKey x A CSM4 Exec exec killall .makeXdie
+PlainKey x A CSM4 Exec exec xlock -mode blank
+PlainKey r A CSM4 Restart
+PlainKey d WT CSM Close
+PlainKey r WT CS WindowShade
+PlainKey y WT CS Stick
+PlainKey m WT CS Maximize
+PlainKey x A 4M Exec sleep .3 && exec xset dpms force off
+PlainKey XF86AudioMute A M Exec sleep .3 && exec xset dpms force off
+Key XF86Eject A N Exec sleep .3 && exec xset dpms force off
+#On lonep `Key F13 A C Exec /usr/sbin/radeontool light on
+#On lonep `Key F13 A M Exec /usr/sbin/radeontool light off
+PlainKey c A 4M Exec sleep .3 && sudo /sbin/hdparm -y /dev/sdb
+
+#I'm curious....
+#Eh - F10 for drod, F8 for installing windows in qemu.
+#Key F1 A A exec echo "Pressed F1!" > /home/edanaher/.fvwm/osd_out_pipe  
+#Key F2 A A exec echo "Pressed F2!" > /home/edanaher/.fvwm/osd_out_pipe  
+#Key F3 A A exec echo "Pressed F3!" > /home/edanaher/.fvwm/osd_out_pipe  
+#Key F4 A A exec echo "Pressed F4!" > /home/edanaher/.fvwm/osd_out_pipe  
+#Key F5 A A exec echo "Pressed F5!" > /home/edanaher/.fvwm/osd_out_pipe  
+#Key F6 A A exec echo "Pressed F6!" > /home/edanaher/.fvwm/osd_out_pipe  
+#Key F7 A A exec echo "Pressed F7!" > /home/edanaher/.fvwm/osd_out_pipe  
+#Key F8 A A exec echo "Pressed F8!" > /home/edanaher/.fvwm/osd_out_pipe  
+#Key F9 A A exec echo "Pressed F9!" > /home/edanaher/.fvwm/osd_out_pipe  
+#Key F10 A A exec echo "Pressed F10!" > /home/edanaher/.fvwm/osd_out_pipe  
+#Key F11 A A exec echo "Pressed F11!" > /home/edanaher/.fvwm/osd_out_pipe  
+#Key F12 A A exec echo "Pressed F12!" > /home/edanaher/.fvwm/osd_out_pipe  
+
+
+PlainKey m A C4 Exec exec ~/.fvwm/osdhandler
+PlainKey x A  4 Exec exec urxvt
+PlainKey x A M4 Exec exec xterm -en UTF-8 -fn 6x13U -geometry 92x52+0+0
+PlainKey x A C4 Exec exec xterm -en UTF-8 -fn 6x13U
+PlainKey j A C4 Exec exec linkx -g
+PlainKey b A C4 Exec exec firefox
+PlainKey g A C4 Exec exec pidgin
+PlainKey m A CSM Exec run_fetchmail
+PlainKey c A C4 Module FvwmConsole
+PlainKey F12 A M4 Exec exec sudo wlan0_start >& ~/.fvwm/osd_out_pipe
+PlainKey F11 A M4 Exec if free | grep Swap:\ \*0  > /home/edanaher/a; then sudo swapon -a; else sudo swapoff -a; fi
+#PlainKey Slash A CM4 Exec exec xvidtune -next
+#PlainKey Semicolon A CM4 Exec exec xvidtune -prev
+PlainKey 1 A M4 Exec setxkbmap us; xmodmap ~/.Xmodmap
+PlainKey 2 A M4 Exec setxkbmap dvorak; xmodmap ~/.Xmodmap
+
+# Zoom
+#SetEnv XRANDR_SCREEN_SIZES "1920x1200 1600x1200 800x600"
+CreateFunc ZoomIn
++ I Piperead `echo $XRANDR_SCREEN_SIZES | sed 's/^\\([^ ]\\+\\) \\(.*\\)$/\\2 \\1/; s/^/SetEnv XRANDR_SCREEN_SIZES "/; s/$/"/'`
++ I Exec /home/edanaher/.fvwm/zoom.sh ${XRANDR_SCREEN_SIZES%% *}
+
+CreateFunc ZoomOut
++ I Piperead `echo $XRANDR_SCREEN_SIZES | sed 's/^\\(.*\\) \\([^ ]\\+\\)$/\\2 \\1/; s/^/SetEnv XRANDR_SCREEN_SIZES "/; s/$/"/'`
++ I Exec /home/edanaher/.fvwm/zoom.sh ${XRANDR_SCREEN_SIZES%% *}
+
+PlainKey Slash A CM4 'ZoomIn'
+PlainKey Semicolon A CM4 'ZoomOut'
+
+CreateFunc WarpAndFocus
++ I WarpToWindow 50 50
++ I Focus
+
+CreateFunc SwitchFocus9
+#+ I Exec exec killall -SIGUSR1 rclick-ctrl
++ I Direction $0 (AcceptsFocus) WarpAndFocus
+#+ I Exec sleep 1.0; killall -SIGUSR2 rclick-ctrl
+
+PlainKey h A CS SwitchFocus9 W
+PlainKey j A CS SwitchFocus9 S
+PlainKey k A CS SwitchFocus9 N
+PlainKey l A CS SwitchFocus9 E
+
+PlainKey h A MS Scroll -100    0
+PlainKey j A MS Scroll    0  100
+PlainKey k A MS Scroll    0 -100
+PlainKey l A MS Scroll  100    0
+
+CreateFunc SwapPages
++ I All (CurrentPage) Stick
++ I Scroll $0 $1
++ I All (CurrentPage) Stick
++ I Scroll $2 $3
++ I All (CurrentPage) Stick
++ I Scroll $0 $1
+
+PlainKey h A CMS SwapPages -100 0 100 0
+PlainKey j A CMS SwapPages 0 100 0 -100 
+PlainKey k A CMS SwapPages 0 -100 0 100
+PlainKey l A CMS SwapPages 100 0 -100 0
+
+#Volume
+#Key XF86AudioRaiseVolume A N exec amixer -Dmixer0 set PCM 2%+ | grep Left: | sed 's/.*\[\([0-9]*%\)\].*/\1/' | xargs amixer -Dmixer0 set Master | grep Mono: > ~/.fvwm/osd_pipe
+#Key XF86AudioLowerVolume A N exec amixer -Dmixer0 set PCM 2%- | grep Left: | sed 's/.*\[\([0-9]*%\)\].*/\1/' | xargs amixer -Dmixer0 set Master | grep Mono: > ~/.fvwm/osd_pipe
+Key XF86AudioRaiseVolume A N exec amixer set Front 1%+ | grep Left: | sed 's/.*\[\([0-9]*%\)\].*/\1/' | xargs amixer set Master | grep Mono: > ~/.fvwm/osd_pipe
+Key XF86AudioLowerVolume A N exec amixer set Front 1%- | grep Left: | sed 's/.*\[\([0-9]*%\)\].*/\1/' | xargs amixer set Master | grep Mono: > ~/.fvwm/osd_pipe
+
+#Key XF86AudioMute A N exec  amixer -Dmixer0 set Master toggle | grep Mono: > ~/.fvwm/osd_pipe
+Key XF86AudioMute A N exec  amixer set Master toggle | grep Mono: > ~/.fvwm/osd_pipe
+
+#Start/stop clock
+On lonep 'Key XF86AudioLowerVolume A C Exec echo o:s > ~/.fvwm/osd_pipe'
+On lonep 'Key XF86AudioRaiseVolume A C Exec echo o:t > ~/.fvwm/osd_pipe'
+On chileh 'Key XF86AudioLowerVolume A C Exec echo o:s > ~/.fvwm/osd_pipe'
+On chileh 'Key XF86AudioRaiseVolume A C Exec echo o:t > ~/.fvwm/osd_pipe'
+
+#Start/stop touchpad
+Key XF86AudioLowerVolume A M Exec synclient TouchpadOff=1
+Key XF86AudioRaiseVolume A M Exec synclient TouchpadOff=0
+
+#Start/stop wireless transmit
+Key XF86AudioLowerVolume A 4 Exec /sbin/iwconfig eth1 txpower off
+Key XF86AudioRaiseVolume A 4 Exec /sbin/iwconfig eth1 txpower on
+
+#Start/stop video out
+Key XF86AudioLowerVolume A M4 Exec /usr/sbin/radeontool dac off
+Key XF86AudioRaiseVolume A M4 Exec /usr/sbin/radeontool dac on
+
+#Start/stop afs
+#On lonep `Key XF86AudioLowerVolume A M4 Exec sudo /etc/init.d/afs-client stop; aklog
+#On lonep `Key XF86AudioRaiseVolume A M4 Exec sudo /etc/init.d/afs-client start; aklog
+
+#Start/stop firefox and xmms
+On lonep `Key XF86AudioLowerVolume A S Exec killall -19 firefox-bin
+On lonep `Key XF86AudioRaiseVolume A S Exec killall -18 firefox-bin
+
+#XMMS
+#Key XF86AudioPlay A A Exec if xmmsctrl playing; then xmmsctrl pause; else xmmsctrl play; fi;
+#Key XF86AudioStop A A Exec exec xmmsctrl stop
+#Key XF86AudioNext A A Exec exec xmmsctrl next
+#Key XF86AudioPrev A A Exec exec xmmsctrl prev
+
+#Key XF86AudioPlay A A Exec echo play/pause >~/fun/player/playerpipe
+#Key XF86AudioStop A A Exec echo stop > ~/fun/player/playerpipe
+#Key XF86AudioPrev A A Exec echo random > ~/fun/player/playerpipe
+#Key XF86AudioNext A A Exec echo next > ~/fun/player/playerpipe
+Key P A CS Exec echo m:play_pause > ~/.fvwm/osd_pipe
+Key O A CS Exec echo m:stop > ~/.fvwm/osd_pipe
+Key I A CS Exec echo m:next > ~/.fvwm/osd_pipe
+Key braceright A CS Exec echo m:seek 10 > ~/.fvwm/osd_pipe
+Key braceleft A CS Exec echo m:seek -10 > ~/.fvwm/osd_pipe
+
+Key M A CM Exec echo M > ~/.fvwm/osd_pipe
+
+
+PlainKey h A 4S Layer -1
+PlainKey j A 4S Lower
+PlainKey k A 4S Raise
+PlainKey l A 4S Layer +1
+
+#PlainKey Tab A 4 Next (AcceptsFocus) Focus
+#PlainKey Tab A 4S Prev (AcceptsFocus) Focus
+
+ViKey Tab A N N Next (AcceptsFocus) Focus
+ViKey Tab A S N Prev (AcceptsFocus) Focus
+
+PlainKey v A CS EnterViMode
+ViKey q A N C LeaveViMode
+
+CreateFunc RebindKeys
++ I Key E A CM -
++ I ResetMouse
++ I LeaveViModeBind
+
+CreateFunc UnbindKeys
++ I ClearMouse
++ I LeaveViModeClear
++ I Key E A CM RebindKeys
+
+ViKey Escape A N C UnbindKeys
+
+SetEnv FVWMVICOUNT 1
+CreateFunc AddToViCount
++ I SetEnv FVWMVICOUNT $[FVWMVICOUNT]$0
+PipeRead "for i in `seq 0 9`; do echo ViKey $i A N N AddToViCount $i; done"
+PipeRead "for i in `seq 2 6`; do echo PlainKey F$i A C Exec exec sudo setdemand $i; done"
+PipeRead "for i in `seq 2 6`; do echo PlainKey F$i A M Exec exec sudo setspeed $i; done"
+
+## Menu(s)
+
+DestroyMenu MenuRoot "Main Menu"
+AddToMenu MenuRoot "Main Menu"
++ "" Nop
++ "urxvt" exec exec urxvt
++ "emacs" exec exec emacs
++ "console"Module FvwmConsole
++ "xemacs" exec exec xemacs
++ "pico" exec exec urxvt -e nano
++ "vim" exec exec urxvt -e vim
++ "Restart Fvwm" Restart
++ "ExitFvwm" Popup MenuQuitVerify
+AddToMenu MenuQuitVerify "Really Quit?"
++ "Quit Fvwm Now" Quit
+
+Mouse 1 R A Menu MenuRoot
+Mouse 3 R A Exec ssh gemedet osascript mute.osa
+
+## Urgency handling
+CreateFunc UrgencyFunc
++ I Style $[w.name] State 22
++ I Style $[w.name] ForeColor White
++ I ChangeDecor UrgentDecor
+#+ I TitleStyle $[w.name] Colorset 3
+CreateFunc UrgencyDoneFunc
++ I Style $[w.name] !State 22
++ I Style $[w.name] ForeColor rgb:b/b/b
++ I ChangeDecor DefaultDecor
+#+ I TitleStyle $[w.name] 
+
+DestroyDecor UrgentDecor
+AddToDecor UrgentDecor
++ TitleStyle Inactive Colorset 3
++ TitleStyle Active Colorset 3
++ TitleStyle -- flat
++ BorderStyle Active Colorset 3
++ BorderStyle Inactive Colorset 3
++ ButtonStyle All Default -- UseTitleStyle flat
++ AddButtonStyle 1 5 40x40@4 40x50@3 50x50@3 50x40@3 40x40@3
++ AddButtonStyle 6 2 35x65@4 65x65@3
++ AddButtonStyle 4 12 25x75@4 65x75@3 65x40@3 25x40@3 25x75@3 \
+                      25x45@4 65x45@3 \
+                      45x40@4 45x20@3 85x20@3 85x60@3 65x60@3
++ AddButtonStyle 2 4 25x20@4 75x70@3 25x70@4 75x20@3
+
+DestroyDecor DefaultDecor
+AddToDecor DefaultDecor
++ TitleStyle Inactive Colorset 1
++ TitleStyle Active Colorset 2
++ TitleStyle -- flat
++ BorderStyle Inactive Colorset 1
++ BorderStyle Active Colorset 2
++ ButtonStyle All Default -- UseTitleStyle flat
++ AddButtonStyle 1 5 40x40@4 40x50@1 50x50@1 50x40@1 40x40@1
++ AddButtonStyle 6 2 35x65@4 65x65@1
++ AddButtonStyle 4 12 25x75@4 65x75@1 65x40@1 25x40@1 25x75@1 \
+                      25x45@4 65x45@1 \
+                      45x40@4 45x20@1 85x20@1 85x60@1 65x60@1
++ AddButtonStyle 2 4 25x20@4 75x70@1 25x70@4 75x20@1
+
+
+PlainKey Tab A 4 Any (State 22) WindowList (State 22) root c c NoGeometry
+MenuStyle WindowList SelectOnRelease Super_L
+MenuStyle WindowList MenuColorset 4
+MenuStyle WindowList BorderWidth 1
+
+CreateFunc WindowListFunc
++ I Iconify off
++ I FlipFocus
++ I Raise
++ I WarpToWindow 50 50
+
+## Start program(s)
+
+Style MPlayer NoTitle, !Borders
+Style mplayer2 NoTitle, !Borders
+Style mpv NoTitle, !Borders
+Style Flurry* NoTitle, !Borders
+
+#Key F1 A N Exec echo "start" > /home/edanaher/fun/games/auto/gamepipe
+#Key F2 A N Exec echo "down" > /home/edanaher/fun/games/auto/gamepipe
+#Key F3 A N Exec echo "up" > /home/edanaher/fun/games/auto/gamepipe
+#Key F4 A N Exec echo "downattack" > /home/edanaher/fun/games/auto/gamepipe
+#Key F5 A N Exec echo "leftspin" > /home/edanaher/fun/games/auto/gamepipe
+#Key F6 A N Exec echo "rightspin" > /home/edanaher/fun/games/auto/gamepipe
+#
+#Key F11 A N Exec echo "super" > /home/edanaher/fun/games/auto/gamepipe
+#Key F12 A N Exec echo "stop" > /home/edanaher/fun/games/auto/gamepipe
+
+Key F16 A N Exec ssh gemedet osascript mute.osa
+Key F16 A C Exec ssh gemedet join.osa
+Key X A SM Exec exec urxvt -tn rxvt-unicode -e ssh gemedet
+
+# transparency
+
+## HACKS
+Style vncviewer NoTitle, !Borders
+Style TigerVNC* NoTitle, !Borders
+#, Sticky

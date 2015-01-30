@@ -1,0 +1,45 @@
+#!/bin/bash
+
+xset b off
+xset r 113
+xset -r 105
+xset r rate 300 34
+xset dpms 600 0 0
+xrdb ~/.Xresources
+#xmodmap -e "pointer = 1 2 9 4 5 6 7 8 3"
+#xinput set-button-map "Touchpad" 1 2 3 4 5 6 7 8 9
+#xinput set-button-map "Mouse1" 1 2 9 4 5 6 7 8 3 
+xinput set-button-map "DualPoint Stick" 1 2 9 4 5 6 7 8 3 
+
+
+if [ .$XSESSION_TYPE != .vnc ]; then
+   echo .$XSESSION_TYPE
+#~/.fvwm/rclick-ctrl &
+
+   modelines=([1]="1680x1050 188.1 1680 1800 1984 2288 1050 1051 1054 1096"
+              [2]="1280x800 83.46 1280 1344 1480 1680 800 801 804 828 +Hsync +Vsync"
+              [3]="960x600 96.58 960 1024 1128 1296 600 600 602 621 +Hsync +Vsync"
+              [4]="800x500 51.40 800 840 1040 1120 500 502 514 540"
+              [5]="768x480 31.50 768 824 944 1000 480 490 492 525 -hsync -vsync"
+              [6]="640x400 122.00 640 1712 1776 1904 400 1051 1054 1066 +hsync +vsync"
+              [7]="320x200 12.59 320 336 384 400 200 204 205 225"
+              )
+
+   OLDIFS=$IFS
+   IFS=""
+   for i in ${modelines[@]}; do
+      bash -c "xrandr --newmode $i"
+      xrandr --addmode LVDS1 ${i%% *}
+   done
+   IFS=OLDIFS
+   unset OLDIFS
+#   ~/bin/bin/synaptics-setup
+fi
+
+echo $DISPLAY > /tmp/.fvwm-lateinit-debug
+if [ $DISPLAY = :0 ]; then
+   ~/.fvwm/osdhandler &
+   ~/.fvwm/keyclick &
+fi
+
+~/.fvwm/setmouse
